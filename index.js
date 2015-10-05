@@ -17,7 +17,10 @@ var opt = {
 
 
 function log (req) {
+  var _options
+
   req.on('options', function (options) {
+    _options = options
     if (debug.raw) {
       console.log(chalk.gray.inverse('options'))
       console.log(prettyjson.render(options, opt, 4))
@@ -47,8 +50,8 @@ function log (req) {
     }
 
     if (debug.body) {
-      if (options.body) {
-        console.log(chalk.gray.inverse('body'), options.body)
+      if (_options.body) {
+        console.log(chalk.gray.inverse('body'), _options.body)
       }
     }
   })
