@@ -56,7 +56,7 @@ function log (req) {
     }
   })
 
-  req.on('response', function (res) {
+  req.on('onresponse', function (res) {
     var code = res.statusCode
 
     var st = status(res.statusCode)
@@ -79,7 +79,8 @@ function log (req) {
   req.on('json', function (body) {
     if (debug.json) {
       if (body) {
-        console.log(chalk.gray.inverse('json'), body)
+        console.log(chalk.gray.inverse('json'))
+        console.log(prettyjson.render(body, opt, 4))
       }
     }
   })
