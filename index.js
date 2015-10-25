@@ -1,6 +1,6 @@
 
-var chalk = require('chalk')
-  , prettyjson = require('prettyjson')
+var c = require('chalk')
+var json = require('prettyjson')
 
 // req, res | http, raw | body, json
 var debug = {}
@@ -17,41 +17,43 @@ var opt = {
 
 
 function log (req) {
-  var _options
+  var _options // raw options
 
   req.on('options', function (options) {
     _options = options
     if (debug.raw) {
-      console.log(chalk.gray.inverse('options'))
-      console.log(prettyjson.render(options, opt, 4))
+      console.log(c.gray.inverse('options'))
+      console.log(json.render(options, opt, 4))
     }
   })
 
   req.on('request', function (req, options) {
     if (debug.http) {
-      console.log(chalk.gray.inverse('options'))
-      console.log(prettyjson.render(options, opt, 4))
+      console.log(c.gray.inverse('options'))
+      console.log(json.render(options, opt, 4))
     }
 
     if (debug.req) {
       var mt = method(req.method)
-      console.log(
-        chalk.cyan.inverse('req'),
-        mt(req.method),
-        chalk.yellow(uri(req))
-      )
+      console.log(c.cyan.inverse('req'), mt(req.method), c.yellow(uri(req)))
 
       var headers = {}
       for (var key in req._headerNames) {
         var name = req._headerNames[key]
         headers[name] = req._headers[key]
       }
-      console.log(prettyjson.render(headers, opt, 4))
+      console.log(json.render(headers, opt, 4))
     }
 
     if (debug.body) {
       if (_options.body) {
-        console.log(chalk.gray.inverse('body'), _options.body)
+        console.log(c.gray.inverse('body'))
+        if (_options.multipart) {
+          multipart(_options)
+        }
+        else {
+          console.log(_options.body)
+        }
       }
     }
   })
@@ -62,16 +64,16 @@ function log (req) {
     var st = status(res.statusCode)
     if (debug.res) {
       console.log(
-        chalk.yellow.inverse('res'),
-        st(res.statusCode + ' ' + res.statusMessage))
-      console.log(prettyjson.render(res.headers, opt, 4))
+        c.yellow.inverse('res'), st(res.statusCode + ' ' + res.statusMessage))
+      console.log(json.render(res.headers, opt, 4))
     }
   })
 
   req.on('body', function (body) {
     if (debug.body) {
       if (body) {
-        console.log(chalk.gray.inverse('body'), body)
+        console.log(c.gray.inverse('body'))
+        console.log(body)
       }
     }
   })
@@ -79,8 +81,8 @@ function log (req) {
   req.on('json', function (body) {
     if (debug.json) {
       if (body) {
-        console.log(chalk.gray.inverse('json'))
-        console.log(prettyjson.render(body, opt, 4))
+        console.log(c.gray.inverse('json'))
+        console.log(json.render(body, opt, 4))
       }
     }
   })
@@ -88,22 +90,22 @@ function log (req) {
 
 function method (verb) {
   if (/GET/.test(verb)) {
-    return chalk.green
+    return c.green
   }
   else if (/POST/.test(verb)) {
-    return chalk.cyan
+    return c.cyan
   }
   else if (/PUT/.test(verb)) {
-    return chalk.cyan
+    return c.cyan
   }
   else if (/DELETE/.test(verb)) {
-    return chalk.red
+    return c.red
   }
   else if (/HEAD|OPTIONS|CONNECT/.test(verb)) {
-    return chalk.yellow
+    return c.yellow
   }
   else if (/TRACE/.test(verb)) {
-    return chalk.gray
+    return c.gray
   }
 }
 
@@ -120,20 +122,49 @@ function uri (req) {
 
 function status (code) {
   if (code >= 100 && code <= 199) {
-    return chalk.white
+    return c.white
   }
   else if (code >= 200 && code <= 299) {
-    return chalk.green
+    return c.green
   }
   else if (code >= 300 && code <= 399) {
-    return chalk.yellow
+    return c.yellow
   }
   else if (code >= 400 && code <= 499) {
-    return chalk.red
+    return c.red
   }
   else if (code >= 500 && code <= 599) {
-    return chalk.red.bold
+    return c.red.bold
   }
+}
+
+function multipart (_options) {
+  var header = _options.headers.get('content-type')
+  var boundary = header.replace(/.*boundary=([^\s;]+).*/, '$1')
+
+  _options.body._items.forEach(function (item) {
+    // file system
+    if (item.hasOwnProperty('fd')) {
+      console.log(c.blue('fs'), c.yellow(item.path))
+    }
+    // @http/core
+    else if (item._client) {
+      var mt = method(item._req.method)
+      var url = _options.protocol+'//'+item._req._headers.host + item._req.path
+      console.log(
+        c.blue('@http/core'), mt(item._req.method), c.yellow(url))
+    }
+    else {
+      item.split('\r\n').forEach(function (line) {
+        if (line.indexOf(boundary) !== -1) {
+          console.log(c.grey(line))
+        }
+        else {
+          console.log(line)
+        }
+      })
+    }
+  })
 }
 
 module.exports = log
