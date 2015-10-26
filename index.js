@@ -110,8 +110,13 @@ function method (verb) {
 }
 
 function uri (req) {
-  return req.agent.protocol + '//' + req._headers.host +
-    (req.path === '/' ? '' : req.path)
+  if (/^https?/.test(req.path)) {
+    return req.path
+  }
+  else {
+    return req.agent.protocol + '//' + req._headers.host +
+      (req.path === '/' ? '' : req.path)
+  }
 
   // return url.format({
   //   protocol: req.agent.protocol,
