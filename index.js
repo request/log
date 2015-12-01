@@ -152,12 +152,12 @@ function multipart (_options) {
     if (item.hasOwnProperty('fd')) {
       console.log(c.blue('fs'), c.yellow(item.path))
     }
-    // @http/core
+    // @request/core
     else if (item._client) {
       var mt = method(item._req.method)
       var url = _options.protocol+'//'+item._req._headers.host + item._req.path
       console.log(
-        c.blue('@http/core'), mt(item._req.method), c.yellow(url))
+        c.blue('@request/core'), mt(item._req.method), c.yellow(url))
     }
     else {
       item.split('\r\n').forEach(function (line) {
